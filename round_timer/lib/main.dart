@@ -34,7 +34,24 @@ class _MainScreenState extends State<MainScreen> {
       appBar: AppBar(
         title: const Text("Timer"),
       ),
-      body: const Center(child: TimeDial(height: 400, width: 200)),
+      body: SizedBox.expand(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: 200,
+              height: 400,
+              child: Stack(alignment: Alignment.centerRight, children: const [
+                TimeDial(height: 400, width: 200),
+                TimeDial(height: 340, width: 170),
+                TimeDial(height: 280, width: 140),
+              ]),
+            )
+            // TimeDial(height: 400, width: 200),
+          ],
+        ),
+      ),
       backgroundColor: Colors.black,
     );
   }
@@ -53,7 +70,7 @@ class _TimeDialState extends State<TimeDial> {
   List<String> getNumbers() {
     List<String> numbers = [];
     for (int i = 0; i < 10; i++) {
-      numbers.add(" " + i.toString());
+      numbers.add(" ${i.toString()}");
     }
     for (int i = 10; i < 60; i++) {
       numbers.add(i.toString());
@@ -61,21 +78,28 @@ class _TimeDialState extends State<TimeDial> {
     return numbers;
   }
 
+  double angle = 0;
+
   @override
   Widget build(BuildContext context) {
     return Container(
         width: widget.width,
         height: widget.height,
         decoration: const BoxDecoration(
-            borderRadius:
-                BorderRadius.only(topLeft: Radius.circular(360), bottomLeft: Radius.circular(360)),
-            color: Colors.blue),
+          borderRadius:
+              BorderRadius.only(topLeft: Radius.circular(360), bottomLeft: Radius.circular(360)),
+          // color: Colors.blue
+        ),
         // child: CustomPaint(
         //   painter: DialBackgroundPainter(color: Colors.red, width: 15),
         // )
-        child: SizedBox(
-          width: widget.width,
-          height: widget.height,
+        child: GestureDetector(
+          onPanUpdate: (details) {
+            angle += (details.delta.dy -
+                    (details.localPosition.dy > widget.height / 2 ? -1 : 1) * details.delta.dx) /
+                widget.width;
+            setState(() {});
+          },
           child: Stack(
             children: [
               CustomPaint(
@@ -84,7 +108,7 @@ class _TimeDialState extends State<TimeDial> {
               ),
               CustomPaint(
                 size: Size(widget.width, widget.height),
-                painter: DialNumbersPainter(numbers: getNumbers(), angle: 0, leftHanded: false),
+                painter: DialNumbersPainter(numbers: getNumbers(), angle: angle, leftHanded: false),
               ),
             ],
           ),
@@ -102,30 +126,27 @@ class DialNumbersPainter extends CustomPainter {
   double anglePerNumber = 0;
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return true;
+    return angle != (oldDelegate as DialNumbersPainter).angle;
   }
 
   @override
   void paint(Canvas canvas, Size size) {
-    const textStyle = TextStyle(color: Colors.white, fontSize: 14);
+    const textStyle = TextStyle(color: Colors.white, fontSize: 13);
     final textPainter = TextPainter(textDirection: TextDirection.ltr);
-    // final Offset center = Offset(leftHanded ? 0 : size.width, size.height / 2);
-
+    canvas.translate(size.width, size.height / 2);
+    canvas.rotate(-angle);
+    canvas.translate(-size.width, -size.height / 2);
     for (var i = 0; i < numbers.length; i++) {
       textPainter.text = TextSpan(text: numbers[i], style: textStyle);
       textPainter.layout();
-      canvas.translate(size.width, size.height / 2);
-      canvas.rotate(anglePerNumber);
-      canvas.translate(-size.width, -size.height / 2);
 
       final textOffset = Offset(
           textPainter.width / 2 - textPainter.width / 2, size.height / 2 - textPainter.height / 2);
-      // final textOffset = Offset(-50, 0);
-      // final textOffset = Offset(center.dx + radius * cos(textAngle) - textPainter.width / 2,
-      //     center.dy + radius * sin(textAngle) - textPainter.height / 2);
       textPainter.paint(canvas, textOffset);
+      canvas.translate(size.width, size.height / 2);
+      canvas.rotate(anglePerNumber);
+      canvas.translate(-size.width, -size.height / 2);
     }
-    canvas.rotate(angle);
   }
 }
 
