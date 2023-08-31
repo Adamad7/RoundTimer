@@ -1,115 +1,159 @@
 import 'package:flutter/material.dart';
+import 'dart:math';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const RoundTimer());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class RoundTimer extends StatelessWidget {
+  const RoundTimer({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
         primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MainScreen(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class MainScreen extends StatefulWidget {
+  const MainScreen({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<MainScreen> createState() => _MainScreenState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _MainScreenState extends State<MainScreen> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Timer"),
+      ),
+      body: const Center(child: TimeDial(height: 400, width: 200)),
+      backgroundColor: Colors.black,
+    );
+  }
+}
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+class TimeDial extends StatefulWidget {
+  const TimeDial({super.key, required this.width, required this.height});
+  final double width;
+  final double height;
+
+  @override
+  State<TimeDial> createState() => _TimeDialState();
+}
+
+class _TimeDialState extends State<TimeDial> {
+  List<String> getNumbers() {
+    List<String> numbers = [];
+    for (int i = 0; i < 10; i++) {
+      numbers.add(" " + i.toString());
+    }
+    for (int i = 10; i < 60; i++) {
+      numbers.add(i.toString());
+    }
+    return numbers;
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Invoke "debug painting" (press "p" in the console, choose the
-          // "Toggle Debug Paint" action from the Flutter Inspector in Android
-          // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
-          // to see the wireframe for each widget.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
-    );
+    return Container(
+        width: widget.width,
+        height: widget.height,
+        decoration: const BoxDecoration(
+            borderRadius:
+                BorderRadius.only(topLeft: Radius.circular(360), bottomLeft: Radius.circular(360)),
+            color: Colors.blue),
+        // child: CustomPaint(
+        //   painter: DialBackgroundPainter(color: Colors.red, width: 15),
+        // )
+        child: SizedBox(
+          width: widget.width,
+          height: widget.height,
+          child: Stack(
+            children: [
+              CustomPaint(
+                size: Size(widget.width, widget.height),
+                painter: DialBackgroundPainter(color: Colors.red, width: 15),
+              ),
+              CustomPaint(
+                size: Size(widget.width, widget.height),
+                painter: DialNumbersPainter(numbers: getNumbers(), angle: 0, leftHanded: false),
+              ),
+            ],
+          ),
+        ));
+  }
+}
+
+class DialNumbersPainter extends CustomPainter {
+  DialNumbersPainter({required this.numbers, required this.angle, this.leftHanded = false}) {
+    anglePerNumber = 2 * pi / numbers.length;
+  }
+  double angle;
+  List<String> numbers;
+  bool leftHanded;
+  double anglePerNumber = 0;
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return true;
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const textStyle = TextStyle(color: Colors.white, fontSize: 14);
+    final textPainter = TextPainter(textDirection: TextDirection.ltr);
+    // final Offset center = Offset(leftHanded ? 0 : size.width, size.height / 2);
+
+    for (var i = 0; i < numbers.length; i++) {
+      textPainter.text = TextSpan(text: numbers[i], style: textStyle);
+      textPainter.layout();
+      canvas.translate(size.width, size.height / 2);
+      canvas.rotate(anglePerNumber);
+      canvas.translate(-size.width, -size.height / 2);
+
+      final textOffset = Offset(
+          textPainter.width / 2 - textPainter.width / 2, size.height / 2 - textPainter.height / 2);
+      // final textOffset = Offset(-50, 0);
+      // final textOffset = Offset(center.dx + radius * cos(textAngle) - textPainter.width / 2,
+      //     center.dy + radius * sin(textAngle) - textPainter.height / 2);
+      textPainter.paint(canvas, textOffset);
+    }
+    canvas.rotate(angle);
+  }
+}
+
+class DialBackgroundPainter extends CustomPainter {
+  DialBackgroundPainter({required this.color, required this.width, this.leftHanded = false});
+
+  final Color color;
+  final double width;
+  final bool leftHanded;
+
+  late final brush = Paint()
+    ..color = color
+    ..strokeWidth = width
+    ..style = PaintingStyle.stroke;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    Offset center = Offset(leftHanded ? 0 : size.width, size.height / 2);
+    canvas.drawArc(
+        Rect.fromCenter(center: center, width: size.width * 2 - width, height: size.height - width),
+        0.5 * pi,
+        (leftHanded ? -1 : 1) * pi,
+        false,
+        brush);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return false;
   }
 }
