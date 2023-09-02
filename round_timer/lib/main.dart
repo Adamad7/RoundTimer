@@ -36,7 +36,7 @@ class _MainScreenState extends State<MainScreen> {
       ),
       body: SizedBox.expand(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             SizedBox(
@@ -66,7 +66,7 @@ class TimeDial extends StatefulWidget {
   State<TimeDial> createState() => _TimeDialState();
 }
 
-class _TimeDialState extends State<TimeDial> {
+class _TimeDialState extends State<TimeDial> with SingleTickerProviderStateMixin {
   List<String> getNumbers() {
     List<String> numbers = [];
     for (int i = 0; i < 10; i++) {
@@ -78,7 +78,90 @@ class _TimeDialState extends State<TimeDial> {
     return numbers;
   }
 
+  final int numberOfVisibleNumbers = 7;
+  late final anglePerNumber = pi / numberOfVisibleNumbers;
+  int selectedItem = 0;
+  late final int additionalItemsBuffer = 2;
+  late List<String> visibleItems =
+      List.filled(numberOfVisibleNumbers + 2 * additionalItemsBuffer, '0');
+
+  void getVisibleNumbers() {
+    // List<String> visibleNumbers = List.filled(31, "0");
+    List<String> allNumbers = getNumbers();
+    // final oppositeAngle = (angle + pi) % (2 * pi);
+    // int oppositeNumberIndex = (oppositeAngle / anglePerNumber).floor();
+    // int currentNumberIndex = (angle / anglePerNumber).floor();
+    // int howManyNumbersFromBegginig = (numberOfVisibleNumbers / 2).floor() +
+    //     currentNumberIndex * (currentNumberIndex < numberOfVisibleNumbers / 2 ? 1 : -1);
+    // int howManyNumberFromEnd = (numberOfVisibleNumbers / 2).floor() -
+    //     currentNumberIndex * (currentNumberIndex < numberOfVisibleNumbers / 2 ? 1 : -1);
+
+    // // print("howManyNumbersFromBegginig: $howManyNumbersFromBegginig");
+    // // print("howManyNumberFromEnd: $howManyNumberFromEnd");
+    // for (int i = 0; i < howManyNumbersFromBegginig; i++) {
+    //   visibleNumbers[i] = allNumbers[i];
+    // }
+    // for (int i = 0; i < howManyNumberFromEnd; i++) {
+    //   visibleNumbers[numberOfVisibleNumbers - 1 - i] = allNumbers[allNumbers.length - 1 - i];
+    // }
+
+    // for (int i = 0; i < 31; i++) {
+    //   visibleNumbers[i] = allNumbers[i];
+    // }
+
+    // return visibleNumbers;
+
+    var startIndex = selectedItem - numberOfVisibleNumbers ~/ 2;
+    startIndex -= additionalItemsBuffer;
+    for (int i = 0; i < numberOfVisibleNumbers + 2 * additionalItemsBuffer; i++) {
+      visibleItems[i] = allNumbers[(startIndex + i) % allNumbers.length];
+    }
+  }
+
   double angle = 0;
+  late AnimationController controller;
+  late Animation<double> animation;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = AnimationController(duration: const Duration(milliseconds: 100), vsync: this);
+    getVisibleNumbers();
+  }
+
+  void animateToClosestNumber() {
+    // final closestNumber = (angle / (2 * pi) * numberOfVisibleNumbers).round();
+    // final closestAngle = closestNumber * 2 * pi / numberOfVisibleNumbers;
+
+    double closestAngle = 0;
+    if (angle > anglePerNumber / 2) {
+      closestAngle = anglePerNumber;
+      selectedItem = (selectedItem + 1) % 60;
+    } else if (angle < -anglePerNumber / 2) {
+      closestAngle = -anglePerNumber;
+      selectedItem = (selectedItem - 1) % 60;
+    } else {
+      closestAngle = 0;
+    }
+    print("I: " + selectedItem.toString());
+
+    animation = Tween<double>(begin: angle, end: closestAngle).animate(controller)
+      ..addListener(() {
+        setState(() {
+          angle = animation.value;
+        });
+      })
+      ..addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          angle = 0;
+          getVisibleNumbers();
+          setState(() {});
+        }
+      });
+    controller.reset();
+
+    controller.forward();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -88,18 +171,28 @@ class _TimeDialState extends State<TimeDial> {
         decoration: const BoxDecoration(
           borderRadius:
               BorderRadius.only(topLeft: Radius.circular(360), bottomLeft: Radius.circular(360)),
-          // color: Colors.blue
         ),
-        // child: CustomPaint(
-        //   painter: DialBackgroundPainter(color: Colors.red, width: 15),
-        // )
         child: GestureDetector(
           onPanUpdate: (details) {
             angle += (details.delta.dy -
                     (details.localPosition.dy > widget.height / 2 ? -1 : 1) * details.delta.dx) /
                 widget.width;
+            // angle = angle % (anglePerNumber * 60);
+            // print(angle);
+            print(selectedItem);
+            if (angle >= anglePerNumber) {
+              angle = 0;
+              selectedItem = (selectedItem + 1) % 60;
+              getVisibleNumbers();
+            } else if (angle <= -anglePerNumber) {
+              angle = 0;
+              selectedItem = (selectedItem - 1) % 60;
+              getVisibleNumbers();
+            }
+
             setState(() {});
           },
+          onPanEnd: (details) => animateToClosestNumber(),
           child: Stack(
             children: [
               CustomPaint(
@@ -108,7 +201,11 @@ class _TimeDialState extends State<TimeDial> {
               ),
               CustomPaint(
                 size: Size(widget.width, widget.height),
-                painter: DialNumbersPainter(numbers: getNumbers(), angle: angle, leftHanded: false),
+                painter: DialNumbersPainter(
+                    numbers: visibleItems,
+                    angle: angle,
+                    leftHanded: false,
+                    anglePerNumber: anglePerNumber),
               ),
             ],
           ),
@@ -117,13 +214,15 @@ class _TimeDialState extends State<TimeDial> {
 }
 
 class DialNumbersPainter extends CustomPainter {
-  DialNumbersPainter({required this.numbers, required this.angle, this.leftHanded = false}) {
-    anglePerNumber = 2 * pi / numbers.length;
-  }
-  double angle;
-  List<String> numbers;
-  bool leftHanded;
-  double anglePerNumber = 0;
+  DialNumbersPainter(
+      {required this.numbers,
+      required this.angle,
+      this.leftHanded = false,
+      required this.anglePerNumber});
+  final double angle;
+  final List<String> numbers;
+  final bool leftHanded;
+  final double anglePerNumber;
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) {
     return angle != (oldDelegate as DialNumbersPainter).angle;
@@ -134,7 +233,7 @@ class DialNumbersPainter extends CustomPainter {
     const textStyle = TextStyle(color: Colors.white, fontSize: 13);
     final textPainter = TextPainter(textDirection: TextDirection.ltr);
     canvas.translate(size.width, size.height / 2);
-    canvas.rotate(-angle);
+    canvas.rotate(-pi / 2 - angle + anglePerNumber / 2 - anglePerNumber * 2);
     canvas.translate(-size.width, -size.height / 2);
     for (var i = 0; i < numbers.length; i++) {
       textPainter.text = TextSpan(text: numbers[i], style: textStyle);
