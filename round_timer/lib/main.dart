@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
+import 'package:provider/provider.dart';
+import 'package:round_timer/time_dial_model.dart';
 
 void main() {
   runApp(const RoundTimer());
@@ -18,6 +20,17 @@ class RoundTimer extends StatelessWidget {
       home: const MainScreen(),
     );
   }
+}
+
+List<String> getNumbers() {
+  List<String> numbers = [];
+  for (int i = 0; i < 10; i++) {
+    numbers.add(" ${i.toString()}");
+  }
+  for (int i = 10; i < 60; i++) {
+    numbers.add(i.toString());
+  }
+  return numbers;
 }
 
 class MainScreen extends StatefulWidget {
@@ -42,10 +55,19 @@ class _MainScreenState extends State<MainScreen> {
             SizedBox(
               width: 200,
               height: 400,
-              child: Stack(alignment: Alignment.centerRight, children: const [
-                TimeDial(height: 400, width: 200),
-                TimeDial(height: 340, width: 170),
-                TimeDial(height: 280, width: 140),
+              child: Stack(alignment: Alignment.centerRight, children: [
+                ChangeNotifierProvider(
+                  create: (context) => TimeDialModel(items: getNumbers(), numberOfVisibleItems: 11),
+                  child: const TimeDial(height: 400, width: 200),
+                ),
+                ChangeNotifierProvider(
+                  create: (context) => TimeDialModel(items: getNumbers(), numberOfVisibleItems: 11),
+                  child: const TimeDial(height: 340, width: 170),
+                ),
+                ChangeNotifierProvider(
+                  create: (context) => TimeDialModel(items: getNumbers(), numberOfVisibleItems: 11),
+                  child: const TimeDial(height: 280, width: 140),
+                ),
               ]),
             )
             // TimeDial(height: 400, width: 200),
@@ -67,58 +89,36 @@ class TimeDial extends StatefulWidget {
 }
 
 class _TimeDialState extends State<TimeDial> with SingleTickerProviderStateMixin {
-  List<String> getNumbers() {
-    List<String> numbers = [];
-    for (int i = 0; i < 10; i++) {
-      numbers.add(" ${i.toString()}");
-    }
-    for (int i = 10; i < 60; i++) {
-      numbers.add(i.toString());
-    }
-    return numbers;
-  }
+  // List<String> getNumbers() {
+  //   List<String> numbers = [];
+  //   for (int i = 0; i < 10; i++) {
+  //     numbers.add(" ${i.toString()}");
+  //   }
+  //   for (int i = 10; i < 60; i++) {
+  //     numbers.add(i.toString());
+  //   }
+  //   return numbers;
+  // }
 
-  final int numberOfVisibleNumbers = 7;
-  late final anglePerNumber = pi / numberOfVisibleNumbers;
-  int selectedItem = 0;
-  late final int additionalItemsBuffer = 2;
-  late List<String> visibleItems =
-      List.filled(numberOfVisibleNumbers + 2 * additionalItemsBuffer, '0');
+  late TimeDialModel dialModel;
+  // final int numberOfVisibleNumbers = 7;
+  // late final anglePerNumber = pi / numberOfVisibleNumbers;
+  // int selectedItem = 0;
+  // late final int additionalItemsBuffer = 2;
+  // late List<String> visibleItems =
+  //     List.filled(numberOfVisibleNumbers + 2 * additionalItemsBuffer, '0');
 
-  void getVisibleNumbers() {
-    // List<String> visibleNumbers = List.filled(31, "0");
-    List<String> allNumbers = getNumbers();
-    // final oppositeAngle = (angle + pi) % (2 * pi);
-    // int oppositeNumberIndex = (oppositeAngle / anglePerNumber).floor();
-    // int currentNumberIndex = (angle / anglePerNumber).floor();
-    // int howManyNumbersFromBegginig = (numberOfVisibleNumbers / 2).floor() +
-    //     currentNumberIndex * (currentNumberIndex < numberOfVisibleNumbers / 2 ? 1 : -1);
-    // int howManyNumberFromEnd = (numberOfVisibleNumbers / 2).floor() -
-    //     currentNumberIndex * (currentNumberIndex < numberOfVisibleNumbers / 2 ? 1 : -1);
+  // void getVisibleNumbers() {
+  //   List<String> allNumbers = getNumbers();
 
-    // // print("howManyNumbersFromBegginig: $howManyNumbersFromBegginig");
-    // // print("howManyNumberFromEnd: $howManyNumberFromEnd");
-    // for (int i = 0; i < howManyNumbersFromBegginig; i++) {
-    //   visibleNumbers[i] = allNumbers[i];
-    // }
-    // for (int i = 0; i < howManyNumberFromEnd; i++) {
-    //   visibleNumbers[numberOfVisibleNumbers - 1 - i] = allNumbers[allNumbers.length - 1 - i];
-    // }
+  //   var startIndex = selectedItem - numberOfVisibleNumbers ~/ 2;
+  //   startIndex -= additionalItemsBuffer;
+  //   for (int i = 0; i < numberOfVisibleNumbers + 2 * additionalItemsBuffer; i++) {
+  //     visibleItems[i] = allNumbers[(startIndex + i) % allNumbers.length];
+  //   }
+  // }
 
-    // for (int i = 0; i < 31; i++) {
-    //   visibleNumbers[i] = allNumbers[i];
-    // }
-
-    // return visibleNumbers;
-
-    var startIndex = selectedItem - numberOfVisibleNumbers ~/ 2;
-    startIndex -= additionalItemsBuffer;
-    for (int i = 0; i < numberOfVisibleNumbers + 2 * additionalItemsBuffer; i++) {
-      visibleItems[i] = allNumbers[(startIndex + i) % allNumbers.length];
-    }
-  }
-
-  double angle = 0;
+  // double angle = 0;
   late AnimationController controller;
   late Animation<double> animation;
 
@@ -126,38 +126,34 @@ class _TimeDialState extends State<TimeDial> with SingleTickerProviderStateMixin
   void initState() {
     super.initState();
     controller = AnimationController(duration: const Duration(milliseconds: 100), vsync: this);
-    getVisibleNumbers();
+    dialModel = Provider.of<TimeDialModel>(context, listen: false);
+    // getVisibleNumbers();
   }
 
   void animateToClosestNumber() {
-    // final closestNumber = (angle / (2 * pi) * numberOfVisibleNumbers).round();
-    // final closestAngle = closestNumber * 2 * pi / numberOfVisibleNumbers;
+    // double closestAngle = 0;
+    // if (angle > anglePerNumber / 2) {
+    //   closestAngle = anglePerNumber;
+    //   selectedItem = (selectedItem + 1) % 60;
+    // } else if (angle < -anglePerNumber / 2) {
+    //   closestAngle = -anglePerNumber;
+    //   selectedItem = (selectedItem - 1) % 60;
+    // }
 
-    double closestAngle = 0;
-    if (angle > anglePerNumber / 2) {
-      closestAngle = anglePerNumber;
-      selectedItem = (selectedItem + 1) % 60;
-    } else if (angle < -anglePerNumber / 2) {
-      closestAngle = -anglePerNumber;
-      selectedItem = (selectedItem - 1) % 60;
-    } else {
-      closestAngle = 0;
-    }
-    print("I: " + selectedItem.toString());
-
-    animation = Tween<double>(begin: angle, end: closestAngle).animate(controller)
-      ..addListener(() {
-        setState(() {
-          angle = animation.value;
-        });
-      })
-      ..addStatusListener((status) {
-        if (status == AnimationStatus.completed) {
-          angle = 0;
-          getVisibleNumbers();
-          setState(() {});
-        }
-      });
+    animation =
+        Tween<double>(begin: dialModel.angle, end: dialModel.closestAngle).animate(controller)
+          ..addListener(() {
+            dialModel.angle = animation.value;
+            // setState(() {
+            // });
+          })
+          ..addStatusListener((status) {
+            if (status == AnimationStatus.completed) {
+              dialModel.getVisibleNumbers();
+              dialModel.angle = 0;
+              // setState(() {});
+            }
+          });
     controller.reset();
 
     controller.forward();
@@ -174,23 +170,23 @@ class _TimeDialState extends State<TimeDial> with SingleTickerProviderStateMixin
         ),
         child: GestureDetector(
           onPanUpdate: (details) {
-            angle += (details.delta.dy -
+            dialModel.addAngle((details.delta.dy -
                     (details.localPosition.dy > widget.height / 2 ? -1 : 1) * details.delta.dx) /
-                widget.width;
-            // angle = angle % (anglePerNumber * 60);
-            // print(angle);
-            print(selectedItem);
-            if (angle >= anglePerNumber) {
-              angle = 0;
-              selectedItem = (selectedItem + 1) % 60;
-              getVisibleNumbers();
-            } else if (angle <= -anglePerNumber) {
-              angle = 0;
-              selectedItem = (selectedItem - 1) % 60;
-              getVisibleNumbers();
-            }
+                widget.width);
+            // angle += (details.delta.dy -
+            //         (details.localPosition.dy > widget.height / 2 ? -1 : 1) * details.delta.dx) /
+            //     widget.width;
+            // if (angle >= anglePerNumber) {
+            //   angle = 0;
+            //   selectedItem = (selectedItem + 1) % 60;
+            //   getVisibleNumbers();
+            // } else if (angle <= -anglePerNumber) {
+            //   angle = 0;
+            //   selectedItem = (selectedItem - 1) % 60;
+            //   getVisibleNumbers();
+            // }
 
-            setState(() {});
+            // setState(() {});
           },
           onPanEnd: (details) => animateToClosestNumber(),
           child: Stack(
@@ -199,13 +195,17 @@ class _TimeDialState extends State<TimeDial> with SingleTickerProviderStateMixin
                 size: Size(widget.width, widget.height),
                 painter: DialBackgroundPainter(color: Colors.red, width: 15),
               ),
-              CustomPaint(
-                size: Size(widget.width, widget.height),
-                painter: DialNumbersPainter(
-                    numbers: visibleItems,
-                    angle: angle,
-                    leftHanded: false,
-                    anglePerNumber: anglePerNumber),
+              Consumer<TimeDialModel>(
+                builder: (context, model, child) {
+                  return CustomPaint(
+                    size: Size(widget.width, widget.height),
+                    painter: DialNumbersPainter(
+                        numbers: model.visibleItems,
+                        angle: model.angle,
+                        leftHanded: false,
+                        anglePerNumber: model.anglePerItem),
+                  );
+                },
               ),
             ],
           ),
