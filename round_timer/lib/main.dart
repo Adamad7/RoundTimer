@@ -5,7 +5,7 @@ import 'package:round_timer/time_dial/time_dial.dart';
 import 'package:round_timer/time_controller.dart';
 
 void main() {
-  runApp(const RoundTimer());
+  runApp(ChangeNotifierProvider(create: (context) => TimerController(), child: const RoundTimer()));
 }
 
 class RoundTimer extends StatelessWidget {
@@ -23,7 +23,7 @@ class RoundTimer extends StatelessWidget {
   }
 }
 
-final TimerController timerController = TimerController();
+// final TimerController timerController = TimerController();
 
 List<String> getNumbers() {
   List<String> numbers = [];
@@ -53,28 +53,38 @@ class _MainScreenState extends State<MainScreen> {
       bottomNavigationBar: Container(
         height: 50,
         color: Colors.grey,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            IconButton(
-              onPressed: () {},
-              icon: const Icon(Icons.stop),
-            ),
-            IconButton(
-              onPressed: () {
-                timerController.pauseAnimation();
-              },
-              icon: const Icon(Icons.pause),
-            ),
-            IconButton(
-              onPressed: () {
-                timerController.animateCountdown();
-              },
-              icon: const Icon(Icons.play_arrow),
-            ),
-          ],
-        ),
+        child: Consumer<TimerController>(builder: (context, timerController, child) {
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              timerController.countdownPaused
+                  ? IconButton(
+                      onPressed: () {
+                        timerController.stopCountdown();
+                      },
+                      icon: const Icon(Icons.stop),
+                    )
+                  : const SizedBox.shrink(),
+              timerController.countdownInProgress
+                  ? IconButton(
+                      onPressed: () {
+                        timerController.pauseCountdown();
+                      },
+                      icon: const Icon(Icons.pause),
+                    )
+                  : const SizedBox.shrink(),
+              !timerController.countdownInProgress
+                  ? IconButton(
+                      onPressed: () {
+                        timerController.startCountdown();
+                      },
+                      icon: const Icon(Icons.play_arrow),
+                    )
+                  : const SizedBox.shrink(),
+            ],
+          );
+        }),
       ),
       body: SizedBox.expand(
         child: Column(
@@ -84,20 +94,22 @@ class _MainScreenState extends State<MainScreen> {
             SizedBox(
               width: 300,
               height: 500,
-              child: Stack(alignment: Alignment.centerRight, children: [
-                ChangeNotifierProvider(
-                  create: (context) => timerController.hoursController,
-                  child: const TimeDial(height: 450),
-                ),
-                ChangeNotifierProvider(
-                  create: (context) => timerController.minutesController,
-                  child: const TimeDial(height: 380),
-                ),
-                ChangeNotifierProvider(
-                  create: (context) => timerController.secondsController,
-                  child: const TimeDial(height: 310),
-                ),
-              ]),
+              child: Consumer<TimerController>(builder: (contextm, timerController, child) {
+                return Stack(alignment: Alignment.centerRight, children: [
+                  ChangeNotifierProvider(
+                    create: (context) => timerController.hoursController,
+                    child: const TimeDial(height: 450),
+                  ),
+                  ChangeNotifierProvider(
+                    create: (context) => timerController.minutesController,
+                    child: const TimeDial(height: 380),
+                  ),
+                  ChangeNotifierProvider(
+                    create: (context) => timerController.secondsController,
+                    child: const TimeDial(height: 310),
+                  ),
+                ]);
+              }),
             ),
           ],
         ),

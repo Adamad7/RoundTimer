@@ -25,18 +25,20 @@ class TimerController extends ChangeNotifier {
   final int maxMinute;
   final int minSecond;
   final int maxSecond;
-  bool countDownInProgress = false;
+  bool countdownInProgress = false;
+  bool countdownPaused = false;
   final TimeDialController hoursController;
   final TimeDialController minutesController;
   final TimeDialController secondsController;
 
-  void animateCountdown() {
-    if (countDownInProgress) {
+  void startCountdown() {
+    if (countdownInProgress) {
+      countdownPaused = false;
       hoursController.resumeCountdownAnimation();
       minutesController.resumeCountdownAnimation();
       secondsController.resumeCountdownAnimation();
     } else {
-      countDownInProgress = true;
+      countdownInProgress = true;
       hoursController.animateCountdown(perItemAnimationDuration: 3600);
       minutesController.animateCountdown(
           fullRotations: hoursController.selectedItem, perItemAnimationDuration: 60);
@@ -44,11 +46,23 @@ class TimerController extends ChangeNotifier {
           fullRotations: (hoursController.selectedItem * 60) + minutesController.selectedItem,
           perItemAnimationDuration: 1);
     }
+    notifyListeners();
   }
 
-  void pauseAnimation() {
+  void pauseCountdown() {
+    countdownPaused = true;
     hoursController.pauseCountdownAnimation();
     minutesController.pauseCountdownAnimation();
     secondsController.pauseCountdownAnimation();
+    notifyListeners();
+  }
+
+  void stopCountdown() {
+    countdownInProgress = false;
+    countdownPaused = false;
+    // hoursController.stopCountdownAnimation();
+    // minutesController.stopCountdownAnimation();
+    // secondsController.stopCountdownAnimation();
+    notifyListeners();
   }
 }

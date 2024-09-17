@@ -15,13 +15,14 @@ class TimeDialController extends ChangeNotifier {
   final int additionalItemsBuffer;
   late final double anglePerItem;
   double _angle = 0;
-  int selectedItem = 0;
+  int _selectedItem = 0;
   late AnimationController nearestNumberAnimationController;
   late Animation<double> nearestNumberAnimation;
   late AnimationController countdownAnimationController;
   late Animation<double> countdownAnimation;
-  double countdownValue = 0.0;
+  double angleAccumulator = 0.0;
   double countdownTotalAngle = 0.0;
+  bool isItemChangeBlocked = false;
 
   void getVisibleNumbers() {
     var startIndex = selectedItem - numberOfVisibleItems ~/ 2;
@@ -31,108 +32,25 @@ class TimeDialController extends ChangeNotifier {
     }
   }
 
-  void initAnimationControllers() {
-    // nearestNumberAnimation =
-    //     Tween<double>(begin: angle, end: closestAngle).animate(nearestNumberAnimationController)
-    //       ..addListener(() {
-    //         _angle = nearestNumberAnimation.value;
-    //         print("closest angle: $angle, new angle: $_angle");
-    //       })
-    //       ..addStatusListener((status) {
-    //         if (status == AnimationStatus.completed) {
-    //           _angle = 0;
-    //           selectedItem = (selectedItem + 1) % items.length;
-    //           getVisibleNumbers();
-    //           notifyListeners();
-    //         }
-    //       });
-
-    // nearestNumberAnimation =
-    //     Tween<double>(begin: angle, end: closestAngle).animate(nearestNumberAnimationController)
-    //       ..addListener(() {
-    //         angle = nearestNumberAnimation.value;
-    //       })
-    //       ..addStatusListener((status) {
-    //         if (status == AnimationStatus.completed) {
-    //           getVisibleNumbers();
-    //           angle = 0;
-    //         }
-    //       });
-
-    // countdownAnimation =
-    //     Tween<double>(begin: 0, end: countdownTotalAngle).animate(countdownAnimationController)
-    //       ..addListener(() {
-    //         _angle += (countdownAnimation.value - countdownValue);
-    //         if (_angle <= -(anglePerItem / 2.0)) {
-    //           selectedItem = (selectedItem - 1) % 60;
-    //           getVisibleNumbers();
-    //           notifyListeners();
-    //         }
-    //         countdownValue = countdownAnimation.value;
-    //       })
-    //       ..addStatusListener((status) {
-    //         if (status == AnimationStatus.completed) {
-    //           angle = 0;
-    //         }
-    //       });
-  }
-
   void animateToClosestNumber() {
-    nearestNumberAnimationController.reset();
     nearestNumberAnimation =
         Tween<double>(begin: angle, end: closestAngle).animate(nearestNumberAnimationController)
           ..addListener(() {
-            angle = nearestNumberAnimation.value;
-          })
-          ..addStatusListener((status) {
-            if (status == AnimationStatus.completed) {
-              // if (closestAngle == anglePerItem) {
-              //   selectedItem = (selectedItem + 1) % items.length;
-              // } else if (closestAngle == -anglePerItem) {
-              //   selectedItem = (selectedItem - 1) % items.length;
-              // }
-              getVisibleNumbers();
-              angle = 0;
-            }
+            _angle = nearestNumberAnimation.value;
+            notifyListeners();
           });
-    // animation = Tween<double>(begin: angle, end: closestAngle).animate(animationController)
-    //   ..addStatusListener((status) {
-    //     if (status == AnimationStatus.completed) {
-
-    //         angle = 0;
-    //         selectedItem = (selectedItem + 1) % items.length;
-    //         getVisibleNumbers();
-    //         notifyListeners();
-
-    //     }
-    //   })
-    //   ..addListener(() {
-
-    //       angle = animation.value;
-
-    //   });
-    // ..addListener(() {
-    //   angle = animation.value;
-    // })
-    // ..addStatusListener((status) {
-    //   if (status == AnimationStatus.completed) {
-    //     getVisibleNumbers();
-    //     angle = 0;
-    //   }
-    // });
-
+    nearestNumberAnimationController.reset();
     nearestNumberAnimationController.forward();
   }
 
   void animateCountdown({int fullRotations = 0, int perItemAnimationDuration = 1}) {
-    countdownAnimationController.reset();
     countdownAnimationController.duration =
         Duration(seconds: (fullRotations * items.length + selectedItem) * perItemAnimationDuration);
     countdownAnimation =
         Tween<double>(begin: 0, end: (fullRotations * items.length + selectedItem) * anglePerItem)
             .animate(countdownAnimationController)
           ..addListener(() {
-            addAngle(-(countdownAnimation.value - countdownValue));
+            addAngle(-(countdownAnimation.value - angleAccumulator));
             // _angle -= (countdownAnimation.value - countdownValue);
             // if (_angle <= -(anglePerItem / 2.0)) {
             //   selectedItem = (selectedItem - 1) % 60;
@@ -141,50 +59,16 @@ class TimeDialController extends ChangeNotifier {
             //   getVisibleNumbers();
             //   // notifyListeners();
             // }
-            countdownValue = countdownAnimation.value;
-          })
-          ..addStatusListener((status) {
-            if (status == AnimationStatus.completed) {
-              angle = 0;
-              countdownValue = 0;
-            }
+            angleAccumulator = countdownAnimation.value;
           });
-
+    // ..addStatusListener((status) {
+    //   if (status == AnimationStatus.completed) {
+    //     angle = 0;
+    //     angleAccumulator = 0;
+    //   }
+    // });
+    countdownAnimationController.reset();
     countdownAnimationController.forward();
-    // double previousValue = 0;
-    // animationController.reset();
-
-    // animation = Tween<double>(
-    //         begin: 0,
-    //         // end: (fullRotations * items.length * anglePerItem) + (anglePerItem * selectedItem))
-    //         end: (fullRotations * items.length + selectedItem) * anglePerItem)
-    //     .animate(animationController)
-    //   ..addListener(() {
-    //     // print(
-    //     //     "animation value: ${animation.value}, previous value: $previousValue, angle: $angle, selectedItem: $selectedItem");
-    //     // addAngle((animation.value - previousValue));
-    //     _angle += (animation.value - previousValue);
-    //     // if (perItemAnimationDuration == 1) {
-    //     //   print(animation.value - previousValue);
-    //     // }
-    //     if (_angle <= -(anglePerItem / 2.0)) {
-    //       selectedItem = (selectedItem - 1) % 60;
-    //       getVisibleNumbers();
-    //       notifyListeners();
-    //     }
-
-    //     previousValue = animation.value;
-    //   })
-    //   ..addStatusListener((status) {
-    //     if (status == AnimationStatus.completed) {
-    //       angle = 0;
-    //       animationController.duration = const Duration(milliseconds: 100);
-    //     }
-    //   });
-
-    // animationController.duration =
-    //     Duration(seconds: (fullRotations * items.length + selectedItem) * perItemAnimationDuration);
-    // animationController.forward();
   }
 
   void pauseCountdownAnimation() {
@@ -199,44 +83,77 @@ class TimeDialController extends ChangeNotifier {
 
   set angle(double newAngle) {
     _angle = newAngle;
+
+    if (_angle > anglePerItem / 2 && !isItemChangeBlocked) {
+      selectedItem = (selectedItem + 1) % items.length;
+      isItemChangeBlocked = true;
+    } else if (_angle < -anglePerItem / 2 && !isItemChangeBlocked) {
+      selectedItem = (selectedItem - 1) % items.length;
+      isItemChangeBlocked = true;
+    }
+
+    if (_angle >= anglePerItem) {
+      // selectedItem = (selectedItem + 1) % items.length;
+      isItemChangeBlocked = false;
+      _angle = 0;
+      getVisibleNumbers();
+    } else if (_angle <= -anglePerItem) {
+      isItemChangeBlocked = false;
+      // selectedItem = (selectedItem - 1) % items.length;
+      _angle = 0;
+      getVisibleNumbers();
+    }
+    // print("selectedItem: $selectedItem, angle: $_angle");
+
+    // if (_angle >= anglePerItem) {
+    //   _angle = 0;
+    // } else if (_angle <= -anglePerItem) {
+    //   _angle = 0;
+    // }
     notifyListeners();
   }
 
+  set selectedItem(int newSelectedItem) {
+    _selectedItem = newSelectedItem;
+    // getVisibleNumbers();
+  }
+
+  int get selectedItem => _selectedItem;
+
   void addAngle(double additionalAngle) {
-    _angle += additionalAngle;
+    // _angle += additionalAngle;
+    angle += additionalAngle;
 
     // if (_angle >= anglePerItem) {
     //   angle = 0;
     //   selectedItem = (selectedItem + 1) % 60;
-    //   getVisibleNumbers();
+    //   // getVisibleNumbers();
     // } else if (_angle <= -anglePerItem) {
     //   angle = 0;
     //   selectedItem = (selectedItem - 1) % 60;
-    //   getVisibleNumbers();
+    //   // getVisibleNumbers();
     // }
 
-    if (_angle >= anglePerItem) {
-      angle = 0;
-      selectedItem = (selectedItem + 1) % 60;
-      getVisibleNumbers();
-    } else if (_angle <= -anglePerItem) {
-      angle = 0;
-      selectedItem = (selectedItem - 1) % 60;
-      getVisibleNumbers();
-    }
+    // if (_angle >= anglePerItem) {
+    //   _angle = 0;
+    //   selectedItem = (selectedItem + 1) % 60;
+    // } else if (_angle <= -anglePerItem) {
+    //   _angle = 0;
+    //   selectedItem = (selectedItem - 1) % 60;
+    // }
 
-    notifyListeners();
+    // notifyListeners();
   }
 
   double get closestAngle {
-    double closestAngle = 0;
-    if (_angle > anglePerItem / 2) {
-      closestAngle = anglePerItem;
-      selectedItem = (selectedItem + 1) % items.length;
-    } else if (_angle < -anglePerItem / 2) {
-      closestAngle = -anglePerItem;
-      selectedItem = (selectedItem - 1) % items.length;
+    if (_angle >= anglePerItem / 2) {
+      return anglePerItem;
+      // selectedItem = (selectedItem + 1) % items.length;
+    } else if (_angle <= -anglePerItem / 2) {
+      return -anglePerItem;
+      // selectedItem = (selectedItem - 1) % items.length;
+    } else {
+      return 0;
     }
-    return closestAngle;
   }
 }

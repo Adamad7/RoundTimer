@@ -25,7 +25,6 @@ class _TimeDialState extends State<TimeDial> with TickerProviderStateMixin {
         AnimationController(duration: const Duration(milliseconds: 0), vsync: this);
     dialController.nearestNumberAnimationController =
         AnimationController(duration: const Duration(milliseconds: 100), vsync: this);
-    dialController.initAnimationControllers();
   }
 
   @override
