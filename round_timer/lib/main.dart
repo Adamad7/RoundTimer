@@ -15,9 +15,7 @@ class RoundTimer extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Flutter Demo',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
+      theme: ThemeData(primarySwatch: Colors.blue, brightness: Brightness.dark),
       home: const MainScreen(),
     );
   }
@@ -47,12 +45,13 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color.fromARGB(255, 41, 41, 41),
       appBar: AppBar(
         title: const Text("Timer"),
       ),
       bottomNavigationBar: Container(
         height: 50,
-        color: Colors.grey,
+        color: const Color.fromARGB(255, 34, 34, 34),
         child: Consumer<TimerController>(builder: (context, timerController, child) {
           return Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -74,7 +73,7 @@ class _MainScreenState extends State<MainScreen> {
                       icon: const Icon(Icons.pause),
                     )
                   : const SizedBox.shrink(),
-              !timerController.countdownInProgress
+              (!timerController.countdownInProgress || timerController.countdownPaused)
                   ? IconButton(
                       onPressed: () {
                         timerController.startCountdown();
@@ -114,7 +113,6 @@ class _MainScreenState extends State<MainScreen> {
           ],
         ),
       ),
-      backgroundColor: Colors.black,
     );
   }
 }

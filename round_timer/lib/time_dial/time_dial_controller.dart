@@ -34,37 +34,75 @@ class TimeDialController extends ChangeNotifier {
 
   void animateToClosestNumber() {
     nearestNumberAnimation =
-        Tween<double>(begin: angle, end: closestAngle).animate(nearestNumberAnimationController)
-          ..addListener(() {
-            _angle = nearestNumberAnimation.value;
-            notifyListeners();
-          });
+        Tween<double>(begin: angle, end: closestAngle).animate(nearestNumberAnimationController);
+    // ..addListener(() {
+    //   _angle = nearestNumberAnimation.value;
+    //   notifyListeners();
+    // });
     nearestNumberAnimationController.reset();
     nearestNumberAnimationController.forward();
   }
 
+  void initAnimationListeners() {
+    nearestNumberAnimationController.addListener(() {
+      _angle = nearestNumberAnimation.value;
+      notifyListeners();
+    });
+
+    countdownAnimationController
+      ..addListener(() {
+        // print(
+        //     "angle: $_angle, animation value: ${countdownAnimation.value}, accumulator: $angleAccumulator, sum: ${angle - (countdownAnimation.value - angleAccumulator)}");
+
+        addAngle(-(countdownAnimation.value - angleAccumulator));
+        angleAccumulator = countdownAnimation.value;
+        // print("angleAccumulator: $angleAccumulator");
+      })
+      ..addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          print("end angle: $_angle");
+          print("selected item: $selectedItem");
+          angleAccumulator = 0;
+          // angle = 0;
+          // angleAccumulator = 0;
+        }
+      });
+  }
+
   void animateCountdown({int fullRotations = 0, int perItemAnimationDuration = 1}) {
-    countdownAnimationController.duration =
-        Duration(seconds: (fullRotations * items.length + selectedItem) * perItemAnimationDuration);
-    countdownAnimation =
-        Tween<double>(begin: 0, end: (fullRotations * items.length + selectedItem) * anglePerItem)
-            .animate(countdownAnimationController)
-          ..addListener(() {
-            addAngle(-(countdownAnimation.value - angleAccumulator));
-            // _angle -= (countdownAnimation.value - countdownValue);
-            // if (_angle <= -(anglePerItem / 2.0)) {
-            //   selectedItem = (selectedItem - 1) % 60;
-            //   angle = 0;
-            //   // print(selectedItem);
-            //   getVisibleNumbers();
-            //   // notifyListeners();
-            // }
-            angleAccumulator = countdownAnimation.value;
-          });
+    // print("start angle: $_angle");
+    // print("calculated total angle: ${(fullRotations * items.length + selectedItem)}");
+    print("currentTotalAngle: ${_selectedItem * anglePerItem}");
+    print(
+        "End item: ${selectedItem - (fullRotations * items.length + selectedItem) * anglePerItem}");
+    countdownAnimationController.duration = Duration(
+        milliseconds:
+            (fullRotations * items.length + selectedItem) * perItemAnimationDuration * 100);
+
+    countdownAnimation = Tween<double>(
+            begin: 0, end: (fullRotations * items.length + selectedItem) * (anglePerItem + 0.009))
+        .animate(countdownAnimationController);
+    // ..addListener(() {
+    //   print(
+    //       "angle: $_angle, animation value: ${countdownAnimation.value}, accumulator: $angleAccumulator, sum: ${angle - (countdownAnimation.value - angleAccumulator)}");
+    //   addAngle(-(countdownAnimation.value - angleAccumulator));
+    //   // print("animation value: ${countdownAnimation.value}");
+    //   // _angle -= (countdownAnimation.value - countdownValue);
+    //   // if (_angle <= -(anglePerItem / 2.0)) {
+    //   //   selectedItem = (selectedItem - 1) % 60;
+    //   //   angle = 0;
+    //   //   // print(selectedItem);
+    //   //   getVisibleNumbers();
+    //   //   // notifyListeners();
+    //   // }
+    //   angleAccumulator = countdownAnimation.value;
+    // })
     // ..addStatusListener((status) {
     //   if (status == AnimationStatus.completed) {
-    //     angle = 0;
-    //     angleAccumulator = 0;
+    //     print("end angle: $_angle");
+    //     print("selected item: $selectedItem");
+    //     // angle = 0;
+    //     // angleAccumulator = 0;
     //   }
     // });
     countdownAnimationController.reset();
@@ -115,6 +153,7 @@ class TimeDialController extends ChangeNotifier {
 
   set selectedItem(int newSelectedItem) {
     _selectedItem = newSelectedItem;
+    // print("selectedItem: $selectedItem");
     // getVisibleNumbers();
   }
 

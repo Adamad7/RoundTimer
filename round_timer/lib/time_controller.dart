@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'package:round_timer/time_dial/time_dial_controller.dart';
@@ -30,14 +32,27 @@ class TimerController extends ChangeNotifier {
   final TimeDialController hoursController;
   final TimeDialController minutesController;
   final TimeDialController secondsController;
+  Timer countdownTimer = Timer(Duration.zero, () {});
 
   void startCountdown() {
+    countdownTimer = Timer(
+        Duration(
+            hours: hoursController.selectedItem,
+            minutes: minutesController.selectedItem,
+            milliseconds: secondsController.selectedItem * 100), () {
+      countdownInProgress = false;
+      countdownPaused = false;
+      notifyListeners();
+    });
     if (countdownInProgress) {
       countdownPaused = false;
       hoursController.resumeCountdownAnimation();
       minutesController.resumeCountdownAnimation();
       secondsController.resumeCountdownAnimation();
     } else {
+      // countdownInProgress = false;
+      // countdownPaused = false;
+      // notifyListeners();
       countdownInProgress = true;
       hoursController.animateCountdown(perItemAnimationDuration: 3600);
       minutesController.animateCountdown(
@@ -51,6 +66,7 @@ class TimerController extends ChangeNotifier {
 
   void pauseCountdown() {
     countdownPaused = true;
+    countdownTimer.cancel();
     hoursController.pauseCountdownAnimation();
     minutesController.pauseCountdownAnimation();
     secondsController.pauseCountdownAnimation();
@@ -60,6 +76,7 @@ class TimerController extends ChangeNotifier {
   void stopCountdown() {
     countdownInProgress = false;
     countdownPaused = false;
+    countdownTimer.cancel();
     // hoursController.stopCountdownAnimation();
     // minutesController.stopCountdownAnimation();
     // secondsController.stopCountdownAnimation();

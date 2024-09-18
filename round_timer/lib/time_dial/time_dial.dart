@@ -25,6 +25,7 @@ class _TimeDialState extends State<TimeDial> with TickerProviderStateMixin {
         AnimationController(duration: const Duration(milliseconds: 0), vsync: this);
     dialController.nearestNumberAnimationController =
         AnimationController(duration: const Duration(milliseconds: 100), vsync: this);
+    dialController.initAnimationListeners();
   }
 
   @override
@@ -35,10 +36,10 @@ class _TimeDialState extends State<TimeDial> with TickerProviderStateMixin {
         decoration: const BoxDecoration(
           borderRadius:
               BorderRadius.only(topLeft: Radius.circular(360), bottomLeft: Radius.circular(360)),
-          color: Colors.blue,
+          // color: Colors.blue,
         ),
         child: ClipPath(
-          clipper: DialClipper(dialWidth: 20),
+          clipper: DialClipper(dialWidth: 20, shadowWidth: 6),
           child: Consumer<TimeDialController>(builder: (context, controller, child) {
             return GestureDetector(
               onPanUpdate: (details) {
@@ -52,7 +53,8 @@ class _TimeDialState extends State<TimeDial> with TickerProviderStateMixin {
                 children: [
                   CustomPaint(
                     size: Size(widget.width, widget.height),
-                    painter: DialBackgroundPainter(color: Colors.red, width: 20),
+                    painter:
+                        DialBackgroundPainter(color: Color.fromARGB(255, 53, 53, 53), width: 20),
                   ),
                   CustomPaint(
                     size: Size(widget.width, widget.height),
